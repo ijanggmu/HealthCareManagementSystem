@@ -62,7 +62,7 @@ export default function ClientsPage() {
   }
 
   const ClientForm = ({ client, onSubmit, onCancel }: { client?: Client, onSubmit: (client: any) => void, onCancel: () => void }) => (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(client ? { ...client, name: e.currentTarget.name.value, email: e.currentTarget.email.value, phone: e.currentTarget.phone.value } : { name: e.currentTarget.name.value, email: e.currentTarget.email.value, phone: e.currentTarget.phone.value }); }}>
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(client ? { ...client, name: e.currentTarget.name, email: e.currentTarget.email.value, phone: e.currentTarget.phone.value } : { name: e.currentTarget.name, email: e.currentTarget.email.value, phone: e.currentTarget.phone.value }); }}>
       <div className="grid gap-4 py-4">
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="name" className="text-right">Name</Label>

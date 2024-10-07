@@ -6,6 +6,14 @@ import { Input } from "@/components/ui/input"
 import { PlusCircle } from 'lucide-react'
 import { DataTable } from '@/components/data-table'
 import { ColumnDef } from '@tanstack/react-table'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 
 interface Incident {
   id: number
@@ -32,17 +40,6 @@ const columns: ColumnDef<Incident>[] = [
     accessorKey: "status",
     header: "Status",
   },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      const incident = row.original
-      return (
-        <Button variant="outline" size="sm" onClick={() => console.log('View incident', incident)}>
-          View
-        </Button>
-      )
-    },
-  },
 ]
 
 export default function IncidentsPage() {
@@ -50,27 +47,87 @@ export default function IncidentsPage() {
     { id: 1, description: "Fall in bathroom", client: "John Doe", date: "2023-05-15", status: "Open" },
     { id: 2, description: "Medication error", client: "Jane Smith", date: "2023-06-02", status: "Closed" },
   ])
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [currentIncident, setCurrentIncident] = useState<Incident | null>(null)
 
-  const addIncident = () => {
-    const newIncident: Incident = {
-      id: incidents.length + 1,
-      description: `New Incident ${incidents.length + 1}`,
-      client: "New Client",
-      date: new Date().toISOString().split('T')[0],
-      status: "Open",
-    }
-    setIncidents([...incidents, newIncident])
+  const addIncident = (newIncident: Omit<Incident, 'id'>) => {
+    const incidentWithId = { ...newIncident, id: incidents.length + 1 }
+    setIncidents([...incidents, incidentWithId])
+    setIsAddDialogOpen(false)
   }
+
+  const editIncident = (updatedIncident: Incident) => {
+    setIncidents(incidents.map(i => i.id === updatedIncident.id ? updatedIncident : i))
+    setIsEditDialogOpen(false)
+  }
+
+  const IncidentForm = ({ incident, onSubmit, onCancel }: { incident?: Incident, onSubmit: (incident: Omit<Incident, 'id'>) => void, onCancel: () => void }) => (
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(incident ? { ...incident, description: e.currentTarget.description.value, client: e.currentTarget.client.value, date: e.currentTarget.date.value, status: e.currentTarget.status.value } : { description: e.currentTarget.description.value, client: e.currentTarget.client.value, date: e.currentTarget.date.value, status: e.currentTarget.status.value }); }}>
+      <div className="grid gap-4 py-4">
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="description" className="text-right">Description</Label>
+          <Input id="description" defaultValue={incident?.description} className="col-span-3" />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="client" className="text-right">Client</Label>
+          <Input id="client" defaultValue={incident?.client} className="col-span-3" />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="date" className="text-right">Date</Label>
+          <Input id="date" type="date" defaultValue={incident?.date} className="col-span-3" />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="status" className="text-right">Status</Label>
+          <Input id="status" defaultValue={incident?.status} className="col-span-3" />
+        </div>
+      </div>
+      <div className="flex justify-end gap-4">
+        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
+        <Button type="submit">Save</Button>
+      </div>
+    </form>
+  )
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Incidents</h1>
-        <Button onClick={addIncident}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Report Incident
-        </Button>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" /> Report Incident
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Incident</DialogTitle>
+            </DialogHeader>
+            <IncidentForm onSubmit={addIncident} onCancel={() => setIsAddDialogOpen(false)} />
+          </DialogContent>
+        </Dialog>
       </div>
-      <DataTable columns={columns} data={incidents} />
+      <DataTable 
+        columns={columns} 
+        data={incidents} 
+        onRowClick={(incident) => console.log('View incident', incident)}
+        onEdit={(incident) => { setCurrentIncident(incident); setIsEditDialogOpen(true); }}
+        onDelete={(incident) => { setIncidents(incidents.filter(i => i.id !== incident.id)); }}
+      />
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Incident</DialogTitle>
+          </DialogHeader>
+          {currentIncident && (
+            <IncidentForm 
+              incident={currentIncident} 
+              onSubmit={(updatedIncident) => editIncident({ ...updatedIncident, id: currentIncident.id })} 
+              onCancel={() => setIsEditDialogOpen(false)} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

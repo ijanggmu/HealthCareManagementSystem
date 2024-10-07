@@ -62,7 +62,7 @@ export default function StaffPage() {
   }
 
   const StaffForm = ({ staffMember, onSubmit, onCancel }: { staffMember?: Staff, onSubmit: (staff: any) => void, onCancel: () => void }) => (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(staffMember ? { ...staffMember, name: e.currentTarget.name.value, email: e.currentTarget.email.value, role: e.currentTarget.role.value } : { name: e.currentTarget.name.value, email: e.currentTarget.email.value, role: e.currentTarget.role.value }); }}>
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(staffMember ? { ...staffMember, name: e.currentTarget.name, email: e.currentTarget.email.value, role: e.currentTarget.role } : { name: e.currentTarget.name, email: e.currentTarget.email.value, role: e.currentTarget.role }); }}>
       <div className="grid gap-4 py-4">
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="name" className="text-right">Name</Label>
