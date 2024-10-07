@@ -40,9 +40,7 @@ function ErrorFallback() {
 
   React.useEffect(() => {
     toast({
-      title: "An error occurred",
-      description: "We're sorry, but something went wrong. Please try again later.",
-      variant: "destructive",
+      // ... your toast configuration
     });
   }, [toast]);
 

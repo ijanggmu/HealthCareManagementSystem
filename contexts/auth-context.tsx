@@ -34,31 +34,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     try {
-      // Try to login using the API
-      const response = await fetch('http://localhost:5325/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
+      console.log("Login attempt with username:", username);
+      console.log("Login attempt with password:", password);
 
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
-        router.push('/');
-      } else {
-        // If API is not available, use static credentials
+      // Try to login using the API
+      try {
+        const response = await fetch('http://localhost:5325/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+          localStorage.setItem('user', JSON.stringify(userData));
+          router.push('/');
+        } else {
+          // If API is not available, use static credentials
+          throw new Error('Invalid credentials');
+        }
+      }
+      catch (error) {
+        console.log("Login error:", error);
         if (username === 'admin' && password === 'password') {
           const staticUser = { username: 'admin' };
           setUser(staticUser);
           localStorage.setItem('user', JSON.stringify(staticUser));
           router.push('/');
-        } else {
-          throw new Error('Invalid credentials');
+        }
+        else {
+          console.error('Login error:', error);
+          throw error;
         }
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Login errors:', error);
       throw error;
     } finally {
       setIsLoading(false);
