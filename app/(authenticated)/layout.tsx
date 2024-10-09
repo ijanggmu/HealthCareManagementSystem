@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Navigation from '@/components/navigation';
 import TopBar from '@/components/top-bar'; // Import TopBar
+import Loader from '@/components/loader';
 
 export default function AuthenticatedLayout({
   children,
@@ -20,17 +21,17 @@ export default function AuthenticatedLayout({
     }
   }, [user, isLoading, router]);
 
-  if (isLoading || !user) {
-    return <div>Loading...</div>;
+  if (isLoading ) {
+    return <Loader/>;
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col min-h-screen">
       <div className="flex">
         <Navigation />
         <div className="flex-1 flex flex-col">
-          <TopBar /> {/* Place TopBar here */}
-          <main className="flex-1 overflow-y-auto p-8">
+          <TopBar /> 
+          <main className="flex-1 overflow-y-auto p-8 min-h-screen">
             {children}
           </main>
         </div>

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import axiosInstance from '../lib/axiosInstance'; // Import the Axios instance
 
 interface User {
   username: string;
@@ -13,6 +14,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
+  error: string | null; // Add error state
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,6 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null); // Initialize error state
   const router = useRouter();
 
   useEffect(() => {
@@ -33,57 +36,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (username: string, password: string) => {
     setIsLoading(true);
+    setError(null); // Reset error state
     try {
       console.log("Login attempt with username:", username);
       console.log("Login attempt with password:", password);
 
-      // Try to login using the API
-      try {
-        const response = await fetch('http://localhost:5325/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password }),
-        });
+      const response = await axiosInstance.post('Identity/Login', {
+        username,
+        password,
+      });
 
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
-          localStorage.setItem('user', JSON.stringify(userData));
+      if (response.status === 204) {
+        // Check if response.data is empty
+        debugger;
+        const userData = response.data || { username }; // Set a default user object or handle as needed
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+        // Delay navigatio  n to ensure state is updated
+        setTimeout(() => {
           router.push('/');
-        } else {
-          // If API is not available, use static credentials
-          throw new Error('Invalid credentials');
-        }
-      }
-      catch (error) {
-        console.log("Login error:", error);
-        if (username === 'admin' && password === 'password') {
-          const staticUser = { username: 'admin' };
-          setUser(staticUser);
-          localStorage.setItem('user', JSON.stringify(staticUser));
-          router.push('/');
-        }
-        else {
-          console.error('Login error:', error);
-          throw error;
-        }
+        }, 0);
+      } else {
+        throw new Error('Invalid credentials');
       }
     } catch (error) {
       console.error('Login errors:', error);
-      throw error;
+      setError('Login failed. Please check your credentials.'); // Set error message
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     setUser(null);
     localStorage.removeItem('user');
+    try {
+      await axiosInstance.post('Identity/logout'); // Ensure your API clears cookies
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
     router.push('/login');
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading, error }}>
       {children}
     </AuthContext.Provider>
   );
