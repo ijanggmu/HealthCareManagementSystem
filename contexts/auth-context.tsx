@@ -47,15 +47,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (response.status === 204) {
-        // Check if response.data is empty
-        debugger;
-        const userData = response.data || { username }; // Set a default user object or handle as needed
-        setUser(userData);
+        const userData = response.data;
+        setUser(userData || { username });
         localStorage.setItem('user', JSON.stringify(userData));
-        // Delay navigatio  n to ensure state is updated
-        setTimeout(() => {
-          router.push('/');
-        }, 0);
+        router.push('/');
       } else {
         throw new Error('Invalid credentials');
       }
@@ -71,7 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     localStorage.removeItem('user');
     try {
-      await axiosInstance.post('Identity/logout'); // Ensure your API clears cookies
+      await axiosInstance.post('/logout'); // Ensure your API clears cookies
     } catch (error) {
       console.error('Logout error:', error);
     }

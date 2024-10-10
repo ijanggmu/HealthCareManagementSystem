@@ -24,8 +24,8 @@ export default function RootLayout({
         <ErrorBoundary>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <AuthProvider>
-              {children}
-              <Toaster />
+                {children}
+                <Toaster />
             </AuthProvider>
           </ThemeProvider>
         </ErrorBoundary>

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getAllCarePlans, addCarePlan, updateCarePlan, deleteCarePlan } from '@/api/service/carePlanService' // Import the care plan service
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PlusCircle } from 'lucide-react'
@@ -43,31 +44,40 @@ const columns: ColumnDef<CarePlan>[] = [
 ]
 
 export default function CarePlansPage() {
-  const [carePlans, setCarePlans] = useState<CarePlan[]>([
-    { id: 1, name: "Diabetes Management", client: "John Doe", startDate: "2023-01-01", endDate: "2023-12-31" },
-    { id: 2, name: "Physical Therapy", client: "Jane Smith", startDate: "2023-02-15", endDate: "2023-08-15" },
-  ])
+  const [carePlans, setCarePlans] = useState<CarePlan[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [currentCarePlan, setCurrentCarePlan] = useState<CarePlan | null>(null)
 
-  const addCarePlan = (newCarePlan: Omit<CarePlan, 'id'>) => {
-    const carePlanWithId = { ...newCarePlan, id: carePlans.length + 1 }
-    setCarePlans([...carePlans, carePlanWithId])
+  useEffect(() => {
+    const fetchCarePlans = async () => {
+      const params = { pageNumber: 0, pageSize: 10, query: '', filters: '', sorts: '' };
+      const carePlansData = await getAllCarePlans(params);
+      setCarePlans(carePlansData)
+    }
+
+    fetchCarePlans()
+  }, [])
+
+  const handleAddCarePlan = async (newCarePlan: Omit<CarePlan, 'id'>) => {
+    const addedCarePlan = await addCarePlan(newCarePlan)
+    setCarePlans((prev) => [...prev, addedCarePlan]) // Update care plan list
     setIsAddDialogOpen(false)
   }
 
-  const editCarePlan = (updatedCarePlan: CarePlan) => {
-    setCarePlans(carePlans.map(cp => cp.id === updatedCarePlan.id ? updatedCarePlan : cp))
+  const handleEditCarePlan = async (updatedCarePlan: CarePlan) => {
+    await updateCarePlan(updatedCarePlan.id, updatedCarePlan)
+    setCarePlans((prev) => prev.map(cp => (cp.id === updatedCarePlan.id ? updatedCarePlan : cp))) // Update care plan list
     setIsEditDialogOpen(false)
   }
 
-  const deleteCarePlan = (carePlanToDelete: CarePlan) => {
-    setCarePlans(carePlans.filter(cp => cp.id !== carePlanToDelete.id))
+  const handleDeleteCarePlan = async (carePlanToDelete: CarePlan) => {
+    await deleteCarePlan(carePlanToDelete.id)
+    setCarePlans((prev) => prev.filter(cp => cp.id !== carePlanToDelete.id)) // Update care plan list
   }
 
   const CarePlanForm = ({ carePlan, onSubmit, onCancel }: { carePlan?: CarePlan, onSubmit: (carePlan: any) => void, onCancel: () => void }) => (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(carePlan ? { ...carePlan, name: e.currentTarget.name.value, client: e.currentTarget.client.value, startDate: e.currentTarget.startDate.value, endDate: e.currentTarget.endDate.value } : { name: e.currentTarget.name.value, client: e.currentTarget.client.value, startDate: e.currentTarget.startDate.value, endDate: e.currentTarget.endDate.value }); }}>
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(carePlan ? { ...carePlan, name: e.currentTarget.name, client: e.currentTarget.client.value, startDate: e.currentTarget.startDate.value, endDate: e.currentTarget.endDate.value } : { name: e.currentTarget.name, client: e.currentTarget.client.value, startDate: e.currentTarget.startDate.value, endDate: e.currentTarget.endDate.value }); }}>
       <div className="grid gap-4 py-4">
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="name" className="text-right">Name</Label>
@@ -107,7 +117,7 @@ export default function CarePlansPage() {
             <DialogHeader>
               <DialogTitle>Add New Care Plan</DialogTitle>
             </DialogHeader>
-            <CarePlanForm onSubmit={addCarePlan} onCancel={() => setIsAddDialogOpen(false)} />
+            <CarePlanForm onSubmit={handleAddCarePlan} onCancel={() => setIsAddDialogOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>
@@ -116,7 +126,7 @@ export default function CarePlansPage() {
         data={carePlans} 
         onRowClick={(carePlan) => console.log('View care plan', carePlan)}
         onEdit={(carePlan) => { setCurrentCarePlan(carePlan); setIsEditDialogOpen(true); }}
-        onDelete={deleteCarePlan}
+        onDelete={handleDeleteCarePlan}
       />
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
@@ -126,7 +136,7 @@ export default function CarePlansPage() {
           {currentCarePlan && (
             <CarePlanForm 
               carePlan={currentCarePlan} 
-              onSubmit={editCarePlan} 
+              onSubmit={handleEditCarePlan} 
               onCancel={() => setIsEditDialogOpen(false)} 
             />
           )}

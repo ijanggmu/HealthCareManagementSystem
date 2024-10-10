@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getAllClients, addClient, updateClient, deleteClient } from '@/api/service/clientService'; // Import the client service
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PlusCircle } from 'lucide-react'
@@ -38,28 +39,37 @@ const columns: ColumnDef<Client>[] = [
 ]
 
 export default function ClientsPage() {
-  const [clients, setClients] = useState<Client[]>([
-    { id: 1, name: "John Doe", email: "john@example.com", phone: "123-456-7890" },
-    { id: 2, name: "Jane Smith", email: "jane@example.com", phone: "987-654-3210" },
-  ])
+  const [clients, setClients] = useState<Client[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [currentClient, setCurrentClient] = useState<Client | null>(null)
 
-  const addClient = (newClient: Omit<Client, 'id'>) => {
-    const clientWithId = { ...newClient, id: clients.length + 1 }
-    setClients([...clients, clientWithId])
-    setIsAddDialogOpen(false)
-  }
+  useEffect(() => {
+    const fetchClients = async () => {
+            const params = { pageNumber: 0, pageSize: 10, query: '', filters: '', sorts: '' };
+      const clientsData = await getAllClients(params);
+      setClients(clientsData);
+    };
 
-  const editClient = (updatedClient: Client) => {
-    setClients(clients.map(client => client.id === updatedClient.id ? updatedClient : client))
-    setIsEditDialogOpen(false)
-  }
+    fetchClients();
+  }, []);
 
-  const deleteClient = (clientToDelete: Client) => {
-    setClients(clients.filter(client => client.id !== clientToDelete.id))
-  }
+  const handleAddClient = async (newClient: Omit<Client, 'id'>) => {
+    const addedClient = await addClient(newClient);
+    setClients((prev) => [...prev, addedClient]); // Update client list
+    setIsAddDialogOpen(false);
+  };
+
+  const handleEditClient = async (updatedClient: Client) => {
+    await updateClient(updatedClient.id, updatedClient);
+    setClients((prev) => prev.map(client => (client.id === updatedClient.id ? updatedClient : client))); // Update client list
+    setIsEditDialogOpen(false);
+  };
+
+  const handleDeleteClient = async (clientToDelete: Client) => {
+    await deleteClient(clientToDelete.id);
+    setClients((prev) => prev.filter(client => client.id !== clientToDelete.id)); // Update client list
+  };
 
   const ClientForm = ({ client, onSubmit, onCancel }: { client?: Client, onSubmit: (client: any) => void, onCancel: () => void }) => (
     <form onSubmit={(e) => { e.preventDefault(); onSubmit(client ? { ...client, name: e.currentTarget.name, email: e.currentTarget.email.value, phone: e.currentTarget.phone.value } : { name: e.currentTarget.name, email: e.currentTarget.email.value, phone: e.currentTarget.phone.value }); }}>
@@ -98,7 +108,7 @@ export default function ClientsPage() {
             <DialogHeader>
               <DialogTitle>Add New Client</DialogTitle>
             </DialogHeader>
-            <ClientForm onSubmit={addClient} onCancel={() => setIsAddDialogOpen(false)} />
+            <ClientForm onSubmit={handleAddClient} onCancel={() => setIsAddDialogOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>
@@ -107,7 +117,7 @@ export default function ClientsPage() {
         data={clients} 
         onRowClick={(client) => console.log('View client', client)}
         onEdit={(client) => { setCurrentClient(client); setIsEditDialogOpen(true); }}
-        onDelete={deleteClient}
+        onDelete={handleDeleteClient}
       />
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
@@ -117,7 +127,7 @@ export default function ClientsPage() {
           {currentClient && (
             <ClientForm 
               client={currentClient} 
-              onSubmit={editClient} 
+              onSubmit={handleEditClient} 
               onCancel={() => setIsEditDialogOpen(false)} 
             />
           )}

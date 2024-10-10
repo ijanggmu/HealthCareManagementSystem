@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getAllIncidents, addIncident, updateIncident, deleteIncident } from '@/api/service/incidentService'; // Import the incident service
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PlusCircle } from 'lucide-react'
@@ -43,24 +44,37 @@ const columns: ColumnDef<Incident>[] = [
 ]
 
 export default function IncidentsPage() {
-  const [incidents, setIncidents] = useState<Incident[]>([
-    { id: 1, description: "Fall in bathroom", client: "John Doe", date: "2023-05-15", status: "Open" },
-    { id: 2, description: "Medication error", client: "Jane Smith", date: "2023-06-02", status: "Closed" },
-  ])
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [currentIncident, setCurrentIncident] = useState<Incident | null>(null)
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [currentIncident, setCurrentIncident] = useState<Incident | null>(null);
 
-  const addIncident = (newIncident: Omit<Incident, 'id'>) => {
-    const incidentWithId = { ...newIncident, id: incidents.length + 1 }
-    setIncidents([...incidents, incidentWithId])
-    setIsAddDialogOpen(false)
-  }
+  useEffect(() => {
+    const fetchIncidents = async () => {
+      const params = { pageNumber: 0, pageSize: 10, query: '', filters: '', sorts: '' };
+      const incidentsData = await getAllIncidents(params);
+      setIncidents(incidentsData);
+    };
 
-  const editIncident = (updatedIncident: Incident) => {
-    setIncidents(incidents.map(i => i.id === updatedIncident.id ? updatedIncident : i))
-    setIsEditDialogOpen(false)
-  }
+    fetchIncidents();
+  }, []);
+
+  const handleAddIncident = async (newIncident: Omit<Incident, 'id'>) => {
+    const addedIncident = await addIncident(newIncident);
+    setIncidents((prev) => [...prev, addedIncident]); // Update incident list
+    setIsAddDialogOpen(false);
+  };
+
+  const handleEditIncident = async (updatedIncident: Incident) => {
+    await updateIncident(updatedIncident.id, updatedIncident);
+    setIncidents((prev) => prev.map(i => (i.id === updatedIncident.id ? updatedIncident : i))); // Update incident list
+    setIsEditDialogOpen(false);
+  };
+
+  const handleDeleteIncident = async (incidentToDelete: Incident) => {
+    await deleteIncident(incidentToDelete.id);
+    setIncidents((prev) => prev.filter(i => i.id !== incidentToDelete.id)); // Update incident list
+  };
 
   const IncidentForm = ({ incident, onSubmit, onCancel }: { incident?: Incident, onSubmit: (incident: Omit<Incident, 'id'>) => void, onCancel: () => void }) => (
     <form onSubmit={(e) => { e.preventDefault(); onSubmit(incident ? { ...incident, description: e.currentTarget.description.value, client: e.currentTarget.client.value, date: e.currentTarget.date.value, status: e.currentTarget.status.value } : { description: e.currentTarget.description.value, client: e.currentTarget.client.value, date: e.currentTarget.date.value, status: e.currentTarget.status.value }); }}>
@@ -87,7 +101,7 @@ export default function IncidentsPage() {
         <Button type="submit">Save</Button>
       </div>
     </form>
-  )
+  );
 
   return (
     <div className="space-y-4">
@@ -103,7 +117,7 @@ export default function IncidentsPage() {
             <DialogHeader>
               <DialogTitle>Add New Incident</DialogTitle>
             </DialogHeader>
-            <IncidentForm onSubmit={addIncident} onCancel={() => setIsAddDialogOpen(false)} />
+            <IncidentForm onSubmit={handleAddIncident} onCancel={() => setIsAddDialogOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>
@@ -112,7 +126,7 @@ export default function IncidentsPage() {
         data={incidents} 
         onRowClick={(incident) => console.log('View incident', incident)}
         onEdit={(incident) => { setCurrentIncident(incident); setIsEditDialogOpen(true); }}
-        onDelete={(incident) => { setIncidents(incidents.filter(i => i.id !== incident.id)); }}
+        onDelete={handleDeleteIncident}
       />
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
@@ -122,12 +136,12 @@ export default function IncidentsPage() {
           {currentIncident && (
             <IncidentForm 
               incident={currentIncident} 
-              onSubmit={(updatedIncident) => editIncident({ ...updatedIncident, id: currentIncident.id })} 
+              onSubmit={(updatedIncident) => handleEditIncident({ ...updatedIncident, id: currentIncident.id })} 
               onCancel={() => setIsEditDialogOpen(false)} 
             />
           )}
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

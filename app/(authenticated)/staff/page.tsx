@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getAllStaff, addStaff, updateStaff, deleteStaff } from '@/api/service/staffService'; // Import the service functions
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PlusCircle } from 'lucide-react'
@@ -16,65 +17,98 @@ import {
 import { Label } from "@/components/ui/label"
 
 interface Staff {
-  id: number
-  name: string
+  id: string
+  firstName: string
+  lastName: string
   email: string
   role: string
+  phoneNumber: string
+  password: string
+  confirmPassword: string
+  username: string
 }
 
 const columns: ColumnDef<Staff>[] = [
   {
-    accessorKey: "name",
-    header: "Name",
+    accessorKey: "firstName",
+    header: "First Name",
   },
   {
-    accessorKey: "email",
+    accessorKey: "lastName",
+    header: "Last Name",
+  },
+  {
+    accessorKey: "contactInf",
     header: "Email",
-  },
-  {
-    accessorKey: "role",
-    header: "Role",
   },
 ]
 
 export default function StaffPage() {
-  const [staff, setStaff] = useState<Staff[]>([
-    { id: 1, name: "Alice Johnson", email: "alice@example.com", role: "Nurse" },
-    { id: 2, name: "Bob Williams", email: "bob@example.com", role: "Doctor" },
-  ])
+  const [staffList, setStaffList] = useState<Staff[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [currentStaff, setCurrentStaff] = useState<Staff | null>(null)
 
-  const addStaff = (newStaff: Omit<Staff, 'id'>) => {
-    const staffWithId = { ...newStaff, id: staff.length + 1 }
-    setStaff([...staff, staffWithId])
-    setIsAddDialogOpen(false)
-  }
+  useEffect(() => {
+    // Fetch staff with default parameters
+    const fetchStaff = async () => {
+      const params = { pageNumber: 0, pageSize: 10, query: '', filters: '', sorts: '' };
+      const staff = await getAllStaff(params);
+      setStaffList(staff);
+    };
 
-  const editStaff = (updatedStaff: Staff) => {
-    setStaff(staff.map(s => s.id === updatedStaff.id ? updatedStaff : s))
-    setIsEditDialogOpen(false)
-  }
+    fetchStaff();
+  }, []);
 
-  const deleteStaff = (staffToDelete: Staff) => {
-    setStaff(staff.filter(s => s.id !== staffToDelete.id))
-  }
+  const handleAddStaff = async (newStaff: Omit<Staff, 'id'>) => {
+    const staffToAdd = { ...newStaff, userName: newStaff.username };
+    const addedStaff = await addStaff(staffToAdd);
+    setStaffList((prev) => [...prev, { ...addedStaff, userName: staffToAdd.userName }]);
+    setIsAddDialogOpen(false);
+  };
+
+  const handleEditStaff = async (updatedStaff: Staff) => {
+    await updateStaff(updatedStaff.id, updatedStaff);
+    setStaffList((prev) => prev.map(s => (s.id === updatedStaff.id ? updatedStaff : s))); // Update staff list
+    setIsEditDialogOpen(false);
+  };
+
+  const handleDeleteStaff = async (staffToDelete: Staff) => {
+    await deleteStaff(staffToDelete.id);
+    setStaffList((prev) => prev.filter(s => s.id !== staffToDelete.id)); // Update staff list
+  };
 
   const StaffForm = ({ staffMember, onSubmit, onCancel }: { staffMember?: Staff, onSubmit: (staff: any) => void, onCancel: () => void }) => (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(staffMember ? { ...staffMember, name: e.currentTarget.name, email: e.currentTarget.email.value, role: e.currentTarget.role } : { name: e.currentTarget.name, email: e.currentTarget.email.value, role: e.currentTarget.role }); }}>
+    <form onSubmit={(e) => { e.preventDefault(); 
+    onSubmit({ ...staffMember, firstName: e.currentTarget.firstName.value, lastName: e.currentTarget.lastName.value, email: e.currentTarget.email.value, username: e.currentTarget.username.value, phoneNumber: e.currentTarget.phoneNumber.value, password: e.currentTarget.password.value, confirmPassword: e.currentTarget.confirmPassword.value }); }}>
       <div className="grid gap-4 py-4">
         <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="name" className="text-right">Name</Label>
-          <Input id="name" defaultValue={staffMember?.name} className="col-span-3" />
+          <Label htmlFor="firstName" className="text-right">First Name</Label>
+          <Input id="firstName" defaultValue={staffMember?.firstName} className="col-span-3" />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="lastName" className="text-right">Last Name</Label>
+          <Input id="lastName" defaultValue={staffMember?.lastName} className="col-span-3" />
         </div>
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="email" className="text-right">Email</Label>
           <Input id="email" defaultValue={staffMember?.email} className="col-span-3" />
         </div>
         <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="role" className="text-right">Role</Label>
-          <Input id="role" defaultValue={staffMember?.role} className="col-span-3" />
+          <Label htmlFor="username" className="text-right">Username</Label>
+          <Input id="username" defaultValue={staffMember?.username} className="col-span-3" />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="phoneNumber" className="text-right">Phone Number</Label>
+          <Input id="phoneNumber" defaultValue={staffMember?.phoneNumber} className="col-span-3" />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="password" className="text-right">Password</Label>
+          <Input id="password" type="password" defaultValue={staffMember?.password} className="col-span-3" />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="confirmPassword" className="text-right">Confirm Password</Label>
+          <Input id="confirmPassword" type = "password"defaultValue={staffMember?.confirmPassword} className="col-span-3" />
         </div>
       </div>
       <div className="flex justify-end gap-4">
@@ -98,16 +132,16 @@ export default function StaffPage() {
             <DialogHeader>
               <DialogTitle>Add New Staff</DialogTitle>
             </DialogHeader>
-            <StaffForm onSubmit={addStaff} onCancel={() => setIsAddDialogOpen(false)} />
+            <StaffForm onSubmit={handleAddStaff} onCancel={() => setIsAddDialogOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>
       <DataTable 
         columns={columns} 
-        data={staff} 
+        data={staffList} 
         onRowClick={(staffMember) => console.log('View staff', staffMember)}
         onEdit={(staffMember) => { setCurrentStaff(staffMember); setIsEditDialogOpen(true); }}
-        onDelete={deleteStaff}
+        onDelete={handleDeleteStaff}
       />
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
@@ -117,7 +151,7 @@ export default function StaffPage() {
           {currentStaff && (
             <StaffForm 
               staffMember={currentStaff} 
-              onSubmit={editStaff} 
+              onSubmit={handleEditStaff} 
               onCancel={() => setIsEditDialogOpen(false)} 
             />
           )}
