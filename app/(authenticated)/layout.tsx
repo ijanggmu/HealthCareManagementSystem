@@ -9,9 +9,9 @@ import Loader from '@/components/loader';
 
 export default function AuthenticatedLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
 

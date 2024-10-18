@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     localStorage.removeItem('user');
     try {
-      await axiosInstance.post('/logout'); // Ensure your API clears cookies
+      await axiosInstance.post('Identity/logout'); // Ensure your API clears cookies
     } catch (error) {
       console.error('Logout error:', error);
     }
