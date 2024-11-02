@@ -13,14 +13,16 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.response.use(
   (response) => response, // Return the response unchanged if successful
   (error) => {
+    debugger;
     // Handle the error
-    const errorMessage = error.response?.data?.error || "An unexpected error occurred";
-    
+    const errorMessages = error.response?.data?.errors || [{ detail: "An unexpected error occurred" }];
+    errorMessages.forEach((errorMessage: any) => {
     toast({
       title: "Error",
-      description: errorMessage,
+      description: errorMessage.detail,
       variant: "destructive",
     });
+  });
 
     return Promise.reject(error);
   }

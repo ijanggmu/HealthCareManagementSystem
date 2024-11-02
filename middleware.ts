@@ -4,8 +4,6 @@ import axios from 'axios'; // Import Axios
 
 export async function middleware(request: NextRequest) {
   const authToken = request.cookies.get('X-Access-Token')?.value;
-  console.log(request.cookies);
-  console.log(`authToken: ${authToken}`);
   // List of paths that don't require authentication
   const publicPaths = ['/login', '/register'];
 
@@ -40,7 +38,6 @@ async function validateToken(token: string): Promise<boolean> {
 
     return response.status === 200; // Return true if the token is valid
   } catch (error) {
-    console.error('Token validation error:', error);
     return false; // Return false if there's an error
   }
 }
