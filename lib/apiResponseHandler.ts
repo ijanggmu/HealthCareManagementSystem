@@ -35,16 +35,18 @@ export const handleApiResponse = async <T>(promise: Promise<any>): Promise<Succe
     const response = await promise;
     return response.data as SuccessApiResponse<T>;
   } catch (error: unknown) {
-    let errorMessage = "An unexpected error occurred";
+    let errorMessages = [{'detail': "An unexpected error occurred"}];
     if (error instanceof Error && 'response' in error) {
       const apiError = error.response as ErrorApiResponse;
-      errorMessage = apiError?.errors?.[0]?.detail || errorMessage;
+      errorMessages = apiError?.errors || errorMessages;
     }
+    errorMessages.forEach((errorMessage) => {
     toast({
       title: "Error",
-      description: errorMessage,
+      description: errorMessage.detail,
       variant: "destructive",
     });
+  });
     return null; // Return null or handle the error as needed
   }
 };
