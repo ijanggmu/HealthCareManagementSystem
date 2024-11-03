@@ -13,7 +13,6 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.response.use(
   (response) => response, // Return the response unchanged if successful
   (error) => {
-    debugger;
     // Handle the error
     const errorMessages = error.response?.data?.errors || [{ detail: "An unexpected error occurred" }];
     errorMessages.forEach((errorMessage: any) => {

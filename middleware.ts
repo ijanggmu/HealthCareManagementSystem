@@ -4,8 +4,10 @@ import axios from 'axios'; // Import Axios
 
 export async function middleware(request: NextRequest) {
   const authToken = request.cookies.get('X-Access-Token')?.value;
+  console.log("Auth token:", authToken);
   // List of paths that don't require authentication
   const publicPaths = ['/login', '/register'];
+  console.log("Auth token status:", !authToken);
 
   // If no authToken and the path is not public, redirect to login
   if (!authToken && !publicPaths.includes(request.nextUrl.pathname)) {

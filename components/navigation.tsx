@@ -12,7 +12,6 @@ const Navigation = () => {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [links, setLinks] = useState([]); // Initialize state for links
-  
   const defaultlink = [
     { menuSlug: '/', menuName: 'Dashboard', icon: Home },
     { menuSlug: '/clients', menuName: 'Clients', icon: Users },
@@ -21,15 +20,19 @@ const Navigation = () => {
     { menuSlug: '/incidents', menuName: 'Incidents', icon: AlertTriangle },
   ];
 
+
   useEffect(() => {
     const fetchNavbarData = async () => {
       debugger;
       const navbarList = await navbarData();
+      if (navbarList.menuList.length == 1) {
+        navbarList.menuList = defaultlink;
+      }
       setLinks(navbarList.menuList);
     };
 
     fetchNavbarData();
-  }, defaultlink);
+  }, []);
 
   const renderLinks = (links: any) => {
     return links.map((link: any) => {
@@ -66,8 +69,8 @@ const Navigation = () => {
       isCollapsed ? "w-20" : "w-64"
     )}>
       <div className="flex items-center justify-between mb-8">
-      {!isCollapsed && <h1 className="text-2xl font-bold">HMS</h1>}
-      <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)}>
+        {!isCollapsed && <h1 className="text-2xl font-bold">HMS</h1>}
+        <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)}>
           <Menu className="h-6 w-6" />
         </Button>
       </div>

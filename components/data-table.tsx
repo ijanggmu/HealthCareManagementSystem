@@ -3,14 +3,15 @@
 import React, { useState } from 'react'
 import {
   ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
   flexRender,
   getCoreRowModel,
-  useReactTable,
-  getPaginationRowModel,
-  SortingState,
-  getSortedRowModel,
-  ColumnFiltersState,
   getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
 } from '@tanstack/react-table'
 import {
   Table,
@@ -26,11 +27,20 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, ChevronDown, ChevronUp } from 'lucide-react'
+import { 
+  MoreHorizontal, 
+  ChevronDown, 
+  ChevronUp,
+  Filter,
+  X
+} from 'lucide-react'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -49,7 +59,10 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [globalFilter, setGlobalFilter] = useState('')
+  const [openFilterPopover, setOpenFilterPopover] = useState<string | null>(null)
+
   const table = useReactTable({
     data,
     columns,
@@ -59,21 +72,44 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
-    onGlobalFilterChange: setGlobalFilter,
+    onColumnVisibilityChange: setColumnVisibility,
     state: {
       sorting,
       columnFilters,
+      columnVisibility,
       globalFilter,
     },
+    onGlobalFilterChange: setGlobalFilter,
   })
 
+  const renderFilterPopover = (column: any) => (
+    <Popover open={openFilterPopover === column.id} onOpenChange={(open) => setOpenFilterPopover(open ? column.id : null)}>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+          <Filter className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80">
+        <div className="space-y-4">
+          <h4 className="font-medium leading-none">Filter {column.columnDef.header}</h4>
+          <Input
+            placeholder={`Filter ${column.columnDef.header}...`}
+            value={(column.getFilterValue() ?? '') as string}
+            onChange={(event) => column.setFilterValue(event.target.value)}
+            className="max-w-sm"
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+
   return (
-    <div>
-      <div className="flex items-center py-4">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
         <Input
-          placeholder="Global filter..."
+          placeholder="Search all columns..."
           value={globalFilter ?? ''}
-          onChange={(event) => setGlobalFilter(String(event.target.value))}
+          onChange={(event) => setGlobalFilter(event.target.value)}
           className="max-w-sm"
         />
       </div>
@@ -85,31 +121,36 @@ export function DataTable<TData, TValue>({
                 {headerGroup.headers.map((header) => {
                   return (
                     <TableHead key={header.id}>
-                      {header.isPlaceholder ? null : (
-                        <div className="flex items-center">
-                          <div
-                            className="cursor-pointer"
-                            onClick={header.column.getToggleSortingHandler()}
-                          >
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                            {{
-                              asc: <ChevronUp className="ml-2 h-4 w-4" />,
-                              desc: <ChevronDown className="ml-2 h-4 w-4" />,
-                            }[header.column.getIsSorted() as string] ?? null}
-                          </div>
-                          <Input
-                            placeholder={`Filter ${header.column.columnDef.header as string}...`}
-                            value={(header.column.getFilterValue() ?? '') as string}
-                            onChange={(event) =>
-                              header.column.setFilterValue(event.target.value)
-                            }
-                            className="max-w-sm ml-2"
-                          />
+                      <div className="flex items-center space-x-2">
+                        <div
+                          className="flex items-center cursor-pointer"
+                          onClick={header.column.getToggleSortingHandler()}
+                        >
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                          {{
+                            asc: <ChevronUp className="ml-2 h-4 w-4" />,
+                            desc: <ChevronDown className="ml-2 h-4 w-4" />,
+                          }[header.column.getIsSorted() as string] ?? null}
                         </div>
-                      )}
+                        {header.column.getCanFilter() && (
+                          <div className="flex items-center space-x-1">
+                            {renderFilterPopover(header.column)}
+                            {header.column.getFilterValue() && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => header.column.setFilterValue(null)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </TableHead>
                   )
                 })}
@@ -140,10 +181,16 @@ export function DataTable<TData, TValue>({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onEdit(row.original as TData)}>
+                        <DropdownMenuItem onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(row.original as TData);
+                        }}>
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onDelete(row.original as TData)}>
+                        <DropdownMenuItem onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(row.original as TData);
+                        }}>
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -170,16 +217,18 @@ export function DataTable<TData, TValue>({
         >
           Previous
         </Button>
-        {Array.from({ length: table.getPageCount() }, (_, i) => i + 1).map((page) => (
-          <Button
-            key={page}
-            variant={table.getState().pagination.pageIndex + 1 === page ? "default" : "outline"}
-            size="sm"
-            onClick={() => table.setPageIndex(page - 1)}
-          >
-            {page}
-          </Button>
-        ))}
+        <div className="flex items-center space-x-2">
+          {Array.from({ length: table.getPageCount() }, (_, i) => i + 1).map((page) => (
+            <Button
+              key={page}
+              variant={table.getState().pagination.pageIndex + 1 === page ? "default" : "outline"}
+              size="sm"
+              onClick={() => table.setPageIndex(page - 1)}
+            >
+              {page}
+            </Button>
+          ))}
+        </div>
         <Button
           variant="outline"
           size="sm"
