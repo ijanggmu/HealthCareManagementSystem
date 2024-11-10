@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { getAllIncidents, addIncident, updateIncident, deleteIncident } from '@/api/service/incidentService'; // Import the incident service
+import { getAllIncidents, addIncident, updateIncident, deleteIncident } from '@/app/(authenticated)/incidents/incidentService'; // Import the incident service
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PlusCircle } from 'lucide-react'

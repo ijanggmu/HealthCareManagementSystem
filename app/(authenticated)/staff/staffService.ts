@@ -1,4 +1,4 @@
-import axiosInstance from '../../lib/axiosInstance'; // Adjust the import path as necessary
+import axiosInstance from '../../../lib/axiosInstance'; // Adjust the import path as necessary
 
 interface Staff {
   firstName: string;

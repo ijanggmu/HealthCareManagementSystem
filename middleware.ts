@@ -4,27 +4,22 @@ import axios from 'axios'; // Import Axios
 
 export async function middleware(request: NextRequest) {
   const authToken = request.cookies.get('X-Access-Token')?.value;
-  console.log("Auth token:", authToken);
   // List of paths that don't require authentication
   const publicPaths = ['/login', '/register'];
-  console.log("Auth token status:", !authToken);
 
-  // If no authToken and the path is not public, redirect to login
-  if (!authToken && !publicPaths.includes(request.nextUrl.pathname)) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  // If the user is authenticated and tries to access login or register, redirect to home
-  if (authToken && publicPaths.includes(request.nextUrl.pathname)) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
-
-  // Validate the token if it exists
   if (authToken) {
     const isValid = await validateToken(authToken);
     if (!isValid) {
       // If the token is invalid, redirect to login
       return NextResponse.redirect(new URL('/login', request.url));
+    }
+    if ( !publicPaths.includes(request.nextUrl.pathname)) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+  
+    // If the user is authenticated and tries to access login or register, redirect to home
+    if ( publicPaths.includes(request.nextUrl.pathname)) {
+      return NextResponse.redirect(new URL('/', request.url));
     }
   }
 

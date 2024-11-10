@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { getAllCarePlans, addCarePlan, updateCarePlan, deleteCarePlan } from '@/api/service/carePlanService' // Import the care plan service
+import { getAllCarePlans, addCarePlan, updateCarePlan, deleteCarePlan } from './carePlanService' // Import the care plan service
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PlusCircle } from 'lucide-react'

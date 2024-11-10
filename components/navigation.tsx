@@ -23,7 +23,6 @@ const Navigation = () => {
 
   useEffect(() => {
     const fetchNavbarData = async () => {
-      debugger;
       const navbarList = await navbarData();
       if (navbarList.menuList.length == 1) {
         navbarList.menuList = defaultlink;

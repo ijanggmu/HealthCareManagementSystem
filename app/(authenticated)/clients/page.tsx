@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { getAllClients, addClient, updateClient, deleteClient } from '@/api/service/clientService'; // Import the client service
+import { getAllClients, addClient, updateClient, deleteClient } from './clientService'; // Import the client service
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PlusCircle } from 'lucide-react'
